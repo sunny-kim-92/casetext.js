@@ -74,9 +74,11 @@ const finalArr = [];
 
 // links.forEach(link => {
   // rp(link)
-    // rp('https://casetext.com/case/ex-parte-city-of-tuskegee-2')
+    rp('https://casetext.com/case/wiggins-v-city-of-evergreen')
     // rp("https://casetext.com/case/startley-gen-contractors-inc-v-water-works-bd-of-birmingham")
-    rp('https://casetext.com/case/weiland-v-loomis')
+    // rp('https://casetext.com/case/weiland-v-loomis')
+    // rp('https://casetext.com/case/patel-v-shah-9')
+    // rp('https://casetext.com/case/imperial-aluminum-scottsboro-llc-v-taylor-2')
 
     .then(res => {
       return cheerio.load(res);
@@ -159,13 +161,13 @@ const finalArr = [];
             hold[k].indexOf("VACATE") != -1
           ) {
             outcome = hold[k];
-            next = hold.slice(k + 1, hold.length);
+            next = hold.slice(k + 1);
             // console.log("k: ", k, " hold.length: ", hold.length);
             break;
           }
         }
-        next.forEach(val => {
-          val = val.replace(/[, ]+/g, " ").toUpperCase();
+        next.forEach(line => {
+          val = line.replace(/[, ]+/g, " ").toUpperCase();
           if (val.indexOf("CONCUR") != -1 && val.indexOf("RESULT") === -1) {
             Object.keys(allJudges).forEach(word => {
               if (val.indexOf(word) != -1 && allJudges[word]) {
@@ -340,6 +342,7 @@ const finalArr = [];
 
       judges = [...new Set(judges)]
 
+
       let wordCount = opinionStr.split(" ").length;
       let obj = {
         citation,
@@ -355,8 +358,9 @@ const finalArr = [];
         recuseJudges,
         cites,
         wordCount,
-        link
+        // link
       };
+      // console.log(obj)
 
       finalArr.push(obj);
       if (finalArr.length === links.length) {
@@ -364,5 +368,11 @@ const finalArr = [];
           console.log(csv);
         });
       }
+
+
+        converter.json2csv([obj], function(err, csv) {
+          console.log(csv);
+        });
+
     });
 // });

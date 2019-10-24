@@ -81,205 +81,220 @@ const allJudges = {
 
 let finalArr = [];
 
-// links.forEach(link => {
-  // rp(link)
-    rp("http://casetext.com/case/riley-v-ewing")
+links.forEach(link => {
+rp(link)
+// rp("http://casetext.com/case/riley-v-ewing")
+  // rp("https://casetext.com/case/chazen-v-marske")
+  // rp("https://casetext.com/case/united-states-v-navarro-106")
+  .then(res => {
+    return cheerio.load(res);
+  })
+  .then($ => {
+    const introObj = $(`p#pa5`);
+    const caseTitle = $(`.title-text.text-truncate`).text();
+    const petitionerName = caseTitle.split(" v. ")[0];
+    const respondantName = caseTitle.split(" v. ")[1];
+    const citation = $(`span.citation`).text();
+    let author = $(`p.byline`).text();
+    const judges = [];
+    let lCourt = "";
+    let lJudge = "";
+    let outcome = "";
+    const concurJudges = [];
+    const dissentJudges = [];
+    let flag = false;
+    const opinionObj = $(`section.decision.opinion`);
+    let wordCount = opinionObj.text().split(" ").length;
+    const otherWordCounts = [];
 
-    // rp("https://casetext.com/case/chazen-v-marske")
-    // rp("https://casetext.com/case/united-states-v-navarro-106")
-    .then(res => {
-      return cheerio.load(res);
-    })
-    .then($ => {
-      const introObj = $(`p#pa5`);
-      const caseTitle = $(`.title-text.text-truncate`).text();
-      const petitionerName = caseTitle.split(" v. ")[0];
-      const respondantName = caseTitle.split(" v. ")[1];
-      const citation = $(`span.citation`).text();
-      let author = $(`p.byline`).text();
-      const judges = [];
-      let lCourt = "";
-      let lJudge = "";
-      let outcome = "";
-      const concurJudges = [];
-      const dissentJudges = [];
-      let flag = false;
-      let wordCount = opinionObj.text().split(" ").length;
-      const otherWordCounts = []
+    let titleStr = introObj
+      .text()
+      .replace(/[, ]+/g, " ")
+      .trim();
 
+    // Author + Lower Court Judge
+    let titleBody = titleStr
+      .replace(/Chief/g, "")
+      .replace(/Judge/g, "")
+      .replace(/Circuit/g, "")
+      .replace(/Magistrate/g, "")
+      .replace(/ORDER/g, "")
+      .trim()
+      .split(" ")
+      .filter(word => word != "" && word != ".");
 
-      let titleStr = introObj
-        .text()
-        .replace(/[, ]+/g, " ")
-        .trim();
-
-      // Author + Lower Court Judge
-      let titleBody = titleStr
-        .replace(/Chief/g, "")
-        .replace(/Judge/g, "")
-        .replace(/Circuit/g, "")
-        .replace(/Magistrate/g, "")
-        .replace(/ORDER/g, "")
-        .trim()
-        .split(" ")
-        .filter(word => word != "" && word != ".")
-
-      if (author.indexOf("PER CURIAM") != -1) {
-        author = "PER CURIAM";
-        lJudge = introObj.children(`b`).text();
-      } else if (author === "") {
-        if (typeof titleBody[titleBody.length - 2] === "string") {
-          !titleBody[titleBody.length - 2].endsWith(".")
-            ? (lJudge = titleBody
-                .slice(titleBody.length - 2, titleBody.length)
-                .join(" "))
-            : !titleBody[titleBody.length - 3].endsWith(".")
-            ? (lJudge = titleBody
-                .slice(titleBody.length - 3, titleBody.length)
-                .join(" "))
-            : (lJudge = titleBody
-                .slice(titleBody.length - 4, titleBody.length)
-                .join(" "));
-        } else {
-          lJudge = titleBody
-            .slice(titleBody.length - 3, titleBody.length - 1)
-            .join(" ");
-        }
+    if (author.indexOf("PER CURIAM") != -1) {
+      author = "PER CURIAM";
+      lJudge = introObj.children(`b`).text();
+    } else if (author === "") {
+      if (typeof titleBody[titleBody.length - 2] === "string") {
+        !titleBody[titleBody.length - 2].endsWith(".")
+          ? (lJudge = titleBody
+              .slice(titleBody.length - 2, titleBody.length)
+              .join(" "))
+          : !titleBody[titleBody.length - 3].endsWith(".")
+          ? (lJudge = titleBody
+              .slice(titleBody.length - 3, titleBody.length)
+              .join(" "))
+          : (lJudge = titleBody
+              .slice(titleBody.length - 4, titleBody.length)
+              .join(" "));
       } else {
-        author = author.replace(/[, ]+/g, " ").split(" ")[0];
-        lJudge = introObj.children(`b`).text();
+        lJudge = titleBody
+          .slice(titleBody.length - 3, titleBody.length - 1)
+          .join(" ");
       }
+    } else {
+      author = author.replace(/[, ]+/g, " ").split(" ")[0];
+      lJudge = introObj.children(`b`).text();
+    }
 
-      // Lower Court Name
-      if (titleStr.indexOf("Western District") != -1) {
+    // Lower Court Name
+    if (titleStr.indexOf("Western District") != -1) {
+      lCourt = "US District Court for the Western District of Wisconsin";
+    }
+    if (titleStr.indexOf("Central District") != -1) {
+      lCourt = "US District Court for the Central District of Illinois";
+    }
+    if (titleStr.indexOf("Southern District") != -1) {
+      if (titleStr.indexOf("Illinois") != -1) {
+        lCourt = "US District Court for the Southern District of Illinois";
+      } else {
         lCourt = "US District Court for the Western District of Wisconsin";
       }
-      if (titleStr.indexOf("Central District") != -1) {
-        lCourt = "US District Court for the Central District of Illinois";
-      }
-      if (titleStr.indexOf("Southern District") != -1) {
-        if (titleStr.indexOf("Illinois") != -1) {
-          lCourt = "US District Court for the Southern District of Illinois";
-        } else {
-          lCourt = "US District Court for the Western District of Wisconsin";
-        }
-      }
-      if (titleStr.indexOf("Northern District") != -1) {
-        if (titleStr.indexOf("Illinois") != -1) {
-          lCourt = "US District Court for the Northern District of Illinois";
-        } else {
-          lCourt = "US District Court for the Western District of Wisconsin";
-        }
+    }
+    if (titleStr.indexOf("Northern District") != -1) {
+      if (titleStr.indexOf("Illinois") != -1) {
+        lCourt = "US District Court for the Northern District of Illinois";
       } else {
-        lCourt = "US District Court for the Eastern District of Wisconsin";
+        lCourt = "US District Court for the Western District of Wisconsin";
       }
+    } else {
+      lCourt = "US District Court for the Eastern District of Wisconsin";
+    }
 
-      // All Judges
-      introObj
-        .text()
-        .replace(/[, ]+/g, " ")
-        .trim()
-        .split(" ")
-        .forEach(word => {
-          if (word === word.toUpperCase()) {
-            if (allJudges[word]) {
-              word === "EVE" ? judges.push("ST EVE") : judges.push(word);
-            }
+    // All Judges
+    introObj
+      .text()
+      .replace(/[, ]+/g, " ")
+      .trim()
+      .split(" ")
+      .forEach(word => {
+        if (word === word.toUpperCase()) {
+          if (allJudges[word]) {
+            word === "EVE" ? judges.push("ST EVE") : judges.push(word);
           }
-        });
-
-      const opinionObj = $(`section.decision.opinion`);
-
-      const opinionArr = [];
-      opinionObj.children().each(function(i, el) {
-        opinionArr.push(
-          $(this)
-            .text()
-            .trim()
-        );
+        }
       });
-      // console.log(opinionArr)
 
-      // Outcome (rough)
-      const decisionStr = opinionObj
-        .children()
-        .last()
-        .text();
-      if (
-        decisionStr.indexOf("REVERSE") != -1 ||
-        decisionStr.indexOf("AFFIRM") != -1 ||
-        decisionStr.indexOf("REMAND") != -1 ||
-        decisionStr.indexOf("VACATE") != -1 ||
-        decisionStr.indexOf("GRANT") != -1 ||
-        decisionStr.indexOf("DENIED") != -1
-      ) {
-        outcome = decisionStr.replace(/[, ]+/g, " ").trim();
-      } else {
-        for (let u = opinionArr.length - 1; u > 0; u--) {
+    const opinionArr = [];
+    opinionObj.children().each(function(i, el) {
+      opinionArr.push(
+        $(this)
+          .text()
+          .trim()
+      );
+    });
+    // console.log(opinionArr)
+
+    // Outcome (rough)
+    const decisionStr = opinionObj
+      .children()
+      .last()
+      .text();
+    if (
+      decisionStr.toUpperCase().indexOf("REVERSE") != -1 ||
+      decisionStr.toUpperCase().indexOf("AFFIRM") != -1 ||
+      decisionStr.toUpperCase().indexOf("REMAND") != -1 ||
+      decisionStr.toUpperCase().indexOf("VACATE") != -1 ||
+      decisionStr.toUpperCase().indexOf("GRANT") != -1 ||
+      decisionStr.toUpperCase().indexOf("DENIED") != -1 ||
+      decisionStr.toUpperCase().indexOf("DISMISS") != -1
+    ) {
+      outcome = decisionStr.replace(/[, ]+/g, " ").trim();
+    } else {
+      for (let u = opinionArr.length - 1; u > 0; u--) {
+        if (!flag) {
           if (
-            opinionArr[u].indexOf("Judge, dissent") != -1 ||
-            opinionArr[u].indexOf("Judge, concur") != -1
+            opinionArr[u].toUpperCase().indexOf("REVERSE") != -1 ||
+            opinionArr[u].toUpperCase().indexOf("AFFIRM") != -1 ||
+            opinionArr[u].toUpperCase().indexOf("REMAND") != -1 ||
+            opinionArr[u].toUpperCase().indexOf("VACATE") != -1 ||
+            opinionArr[u].toUpperCase().indexOf("GRANT") != -1 ||
+            opinionArr[u].toUpperCase().indexOf("DENIED") != -1 ||
+            opinionArr[u].toUpperCase().indexOf("DISMISS") != -1
           ) {
-            outcome = opinionArr[u - 1].trim();
-            break;
+            outcome = opinionArr[u].replace(/[, ]+/g, " ").trim();
             flag = true;
           }
         }
-      }
-
-      // Dissenting/Concurring Judges & Word Counts(rough)
-      opinionArr.forEach(el => {
-        if (el.indexOf("Judge, concur") != -1) {
-          dissentJudges.push(el.split(" ")[0].replace(/[, ]+/g, " "));
-          let opinionStr = opinionObj.text()
-          otherWordCounts.push(wordCount - opinionStr.indexOf("el"))
-          wordCount = opinionStr.indexOf("el")
-        } else if (el.indexOf("Judge, dissent") != -1) {
-          let opinionStr = opinionObj.text()
-          if (otherWordCounts.length != 0){
-            otherWordCounts.push(wordCount+otherWordCounts[0]-el.indexOf("Judge, dissent"))
-            otherWordCounts[0] = el.indexOf("Judge, dissent") - wordCount
-          }
-          else{
-            otherWordCounts.push(wordCount - opinionStr.indexOf("el"))
-            wordCount = opinionStr.indexOf("el")
-          }
-          otherWordCounts.push(wordCount - opinionStr.indexOf("el"))
-          concurJudges.push(el.split(" ")[0].replace(/[, ]+/g, " "));
+        if (
+          opinionArr[u].indexOf("Judge, dissent") != -1 ||
+          opinionArr[u].indexOf("Judge, concur") != -1
+        ) {
+          const hold = [];
+          hold.push(outcome)
+          hold.push(opinionArr[u].replace(/[, ]+/g, " ").trim());
+          outcome = hold
+          break;
         }
-      });
+      }
+    }
 
-      // Citations
-      const citesArr = $(`.raw-ref`)
-        .map(function(i, el) {
-          return $(this).text();
-        })
-        .get();
-      const cites = [...new Set(citesArr)];
-
-      // Word Count
-
-      let obj = {
-        citation,
-        caseTitle,
-        outcome,
-        author,
-        lCourt,
-        lJudge,
-        judges,
-        dissentJudges,
-        concurJudges,
-        cites,
-        wordCount,
-        link,
-        flag
-      };
-      console.log(obj)
-      finalArr.push(obj);
-      if (finalArr.length === links.length) {
-        converter.json2csv(finalArr, function(err, csv) {
-          console.log(csv);
-        });
+    // Dissenting/Concurring Judges & Word Counts(rough)
+    opinionArr.forEach(el => {
+      if (el.indexOf("Judge, concur") != -1) {
+        dissentJudges.push(el.split(" ")[0].replace(/[, ]+/g, " "));
+        let opinionStr = opinionObj.text();
+        otherWordCounts.push(wordCount - opinionStr.indexOf("el"));
+        wordCount = opinionStr.indexOf("el");
+      } else if (el.indexOf("Judge, dissent") != -1) {
+        let opinionStr = opinionObj.text();
+        if (otherWordCounts.length != 0) {
+          otherWordCounts.push(
+            wordCount + otherWordCounts[0] - el.indexOf("Judge, dissent")
+          );
+          otherWordCounts[0] = el.indexOf("Judge, dissent") - wordCount;
+        } else {
+          otherWordCounts.push(wordCount - opinionStr.indexOf("el"));
+          wordCount = opinionStr.indexOf("el");
+        }
+        otherWordCounts.push(wordCount - opinionStr.indexOf("el"));
+        concurJudges.push(el.split(" ")[0].replace(/[, ]+/g, " "));
       }
     });
-// });
+
+    // Citations
+    const citesArr = $(`.raw-ref`)
+      .map(function(i, el) {
+        return $(this).text();
+      })
+      .get();
+    const cites = [...new Set(citesArr)];
+
+    // Word Count
+
+    let obj = {
+      citation,
+      caseTitle,
+      outcome,
+      author,
+      lCourt,
+      lJudge,
+      judges,
+      dissentJudges,
+      concurJudges,
+      cites,
+      wordCount,
+      link,
+      flag
+    };
+    // console.log(obj);
+    finalArr.push(obj);
+    if (finalArr.length === links.length) {
+      converter.json2csv(finalArr, function(err, csv) {
+        console.log(csv);
+      });
+    }
+  });
+});
