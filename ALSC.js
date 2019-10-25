@@ -73,7 +73,7 @@ let links = [
 const finalArr = [];
 
 // links.forEach(link => {
-  // rp(link)
+//   rp(link)
     rp('https://casetext.com/case/wiggins-v-city-of-evergreen')
     // rp("https://casetext.com/case/startley-gen-contractors-inc-v-water-works-bd-of-birmingham")
     // rp('https://casetext.com/case/weiland-v-loomis')
@@ -347,10 +347,10 @@ const finalArr = [];
       let obj = {
         citation,
         caseTitle,
-        outcome,
-        author,
         caseType,
         lCourt,
+        outcome,
+        author,
         judges,
         concurJudges,
         concurInResultJudges,
@@ -370,9 +370,9 @@ const finalArr = [];
       }
 
 
-        converter.json2csv([obj], function(err, csv) {
-          console.log(csv);
-        });
+        // converter.json2csv([obj], function(err, csv) {
+        //   console.log(csv);
+        // });
 
     });
 // });

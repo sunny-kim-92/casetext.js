@@ -1,7 +1,7 @@
 const cheerio = require("cheerio");
 const rp = require("request-promise");
 
-rp("https://casetext.com/cases/2cir/edny/2019/9")
+rp("https://casetext.com/cases/az/azapp/2019/9")
 .then(res => {
     return cheerio.load(res);
   })

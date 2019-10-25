@@ -11,7 +11,7 @@ const allJudges = {
 };
 module.exports = {
   parseFourSides: val => {
-    let tempConcurI = val.indexOf("CONCUR");
+    let tempConcurI = Math.max(val.indexOf("CONCUR"),val.indexOf("JOINED"))
     let tempConcurInResultI = val.indexOf("CONCUR IN THE RESULT");
     let tempRecuseI = val.indexOf("RECUSE");
     let tempDissentI = val.indexOf("DISSENT");

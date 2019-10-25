@@ -277,10 +277,10 @@ rp(link)
     let obj = {
       citation,
       caseTitle,
-      outcome,
-      author,
       lCourt,
       lJudge,
+      outcome,
+      author,
       judges,
       dissentJudges,
       concurJudges,
